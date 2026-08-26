@@ -72,7 +72,7 @@ export default function Hero() {
         </div>
 
         <p style={{ fontSize: "17px", lineHeight: 1.5, color: "var(--cream)", margin: 0, maxWidth: "360px" }}>
-          Book your table in under a minute &mdash; no phone tag, no waiting on hold.
+          Book your table in under a minute &mdash; no phone calls, no hold music.
         </p>
 
         <button
