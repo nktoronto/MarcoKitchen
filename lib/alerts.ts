@@ -66,7 +66,7 @@ async function sendEmail({ subject, html }: { subject: string; html: string }): 
 // for the nightly list, rather than block on that.
 export async function sendLargePartyAlert(reservationId: number): Promise<void> {
   const result = await pool.query<ReservationRow>(
-    `SELECT id, location, name, party_size, reservation_date, reservation_time
+    `SELECT id, location, name, party_size, reservation_date::text, reservation_time
      FROM reservations WHERE id = $1`,
     [reservationId]
   );
