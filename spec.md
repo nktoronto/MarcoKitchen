@@ -98,7 +98,7 @@ Café de Khan operates **two locations today, with one or two more branches poss
 - Small/large threshold: 6 guests.
 - Seating capacity: 50 covers per time slot.
 - Operating hours: Mon–Fri 11:45am–11:00pm, Sat 10:00am–12:00am, Sun 10:00am–11:00pm.
-- Marco's alert channel: SMS (not email) for large-party alerts, reminders, and cancellation notices — confirmed as one consistent channel for everything that notifies Marco.
+- **Marco's alert channel: EMAIL, not SMS** (superseding the earlier SMS decision below). Twilio's trial account rejected every plain-body SMS outright ("trial accounts can only use predefined SMS templates" — a Twilio account-level restriction, not fixable from the app side without an approved template or an account upgrade). The user chose to drop Twilio and reuse the already-working Resend email setup instead. This is confirmed and built for the large-party pending alert (`lib/alerts.ts`). The still-unbuilt pieces below (Approve/Decline links, hourly reminders, cancellation notices) were designed around SMS — when those are built, they'll hit the same Twilio limitation and should default to email too unless Twilio is specifically revisited.
 
 ## Open Item
 None remaining. All configuration and behavioral decisions are resolved.

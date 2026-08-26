@@ -1,9 +1,7 @@
 import { pool } from "./db";
 import { locations, isWithinHours } from "./locations";
-
-// Parties this size or smaller are confirmed instantly; larger parties
-// always go to pending review. Settled in spec.md.
-const CONFIRMED_THRESHOLD = 6;
+import { sendLargePartyAlert } from "./alerts";
+import { CONFIRMED_THRESHOLD } from "./constants";
 
 export type ReservationInput = {
   locationId: string;
@@ -180,7 +178,20 @@ export async function createReservation(
     );
 
     await client.query("COMMIT");
-    return { ok: true, status, id: insertResult.rows[0].id, date: input.date, time: input.time };
+
+    const newId = insertResult.rows[0].id;
+    if (status === "pending") {
+      // Best-effort: an alert failure must never surface as a booking
+      // failure to the guest. Awaited (not fire-and-forget) so it
+      // actually completes before this serverless invocation ends.
+      try {
+        await sendLargePartyAlert(newId);
+      } catch (err) {
+        console.error("Failed to send large-party alert:", err);
+      }
+    }
+
+    return { ok: true, status, id: newId, date: input.date, time: input.time };
   } catch (err) {
     await client.query("ROLLBACK");
     throw err;
