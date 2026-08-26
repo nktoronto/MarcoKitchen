@@ -1,4 +1,7 @@
 import { pool } from "@/lib/db";
+import { sendEmail } from "@/lib/email";
+import { formatDateLabel, formatTimeLabel } from "@/lib/formatting";
+import { tomorrowDateString } from "@/lib/dates";
 
 export const dynamic = "force-dynamic";
 
@@ -9,69 +12,6 @@ type RawRow = {
   reservation_time: string;
   status: string;
 };
-
-// Eastern-time "today" as {year, month, day}, using Intl (handles DST
-// correctly) rather than string-parsing tricks.
-function getEasternDateParts(date: Date): { year: number; month: number; day: number } {
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/New_York",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(date);
-  const map = Object.fromEntries(parts.map((p) => [p.type, p.value]));
-  return { year: Number(map.year), month: Number(map.month), day: Number(map.day) };
-}
-
-// "Tomorrow" as a YYYY-MM-DD string. Anchored at UTC noon before adding a
-// day so the arithmetic never lands on a DST-crossing midnight edge case.
-function tomorrowDateString(): string {
-  const { year, month, day } = getEasternDateParts(new Date());
-  const todayNoonUtc = new Date(Date.UTC(year, month - 1, day, 12));
-  const tomorrowNoonUtc = new Date(todayNoonUtc.getTime() + 24 * 60 * 60 * 1000);
-  const y = tomorrowNoonUtc.getUTCFullYear();
-  const m = String(tomorrowNoonUtc.getUTCMonth() + 1).padStart(2, "0");
-  const d = String(tomorrowNoonUtc.getUTCDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
-}
-
-function formatDateLabel(dateStr: string): string {
-  const [y, m, d] = dateStr.split("-").map(Number);
-  const dt = new Date(Date.UTC(y, m - 1, d, 12));
-  return dt.toLocaleDateString("en-US", {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-    timeZone: "UTC",
-  });
-}
-
-function formatTimeLabel(timeStr: string): string {
-  const [h, m] = timeStr.split(":").map(Number);
-  const period = h >= 12 ? "PM" : "AM";
-  const hour12 = h % 12 === 0 ? 12 : h % 12;
-  return `${hour12}:${String(m).padStart(2, "0")} ${period}`;
-}
-
-async function sendEmail({ subject, html }: { subject: string; html: string }) {
-  const res = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      from: "Marco's Kitchen <onboarding@resend.dev>",
-      to: [process.env.STAFF_EMAIL],
-      subject,
-      html,
-    }),
-  });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Resend API error: ${res.status} ${text}`);
-  }
-}
 
 export async function GET(request: Request) {
   const authHeader = request.headers.get("authorization");
@@ -117,6 +57,7 @@ export async function GET(request: Request) {
 
   if (!verified) {
     await sendEmail({
+      to: process.env.STAFF_EMAIL ?? "",
       subject: "Tonight's Table List — verification failed",
       html: `<p>The nightly table list for ${tomorrow} could not be verified: two independently-derived totals didn't match.</p>
              <p>From raw rows: confirmed=${jsComputed.confirmed}, pending=${jsComputed.pending}</p>
@@ -155,7 +96,7 @@ export async function GET(request: Request) {
     html += `<p><strong>Grand total confirmed: ${jsComputed.confirmed} &middot; Grand total pending: ${jsComputed.pending}</strong></p>`;
   }
 
-  await sendEmail({ subject: `Tonight's Table List — ${dateLabel}`, html });
+  await sendEmail({ to: process.env.STAFF_EMAIL ?? "", subject: `Tonight's Table List — ${dateLabel}`, html });
 
   return Response.json({ ok: true, date: tomorrow, rowCount: rows.length, jsComputed });
 }

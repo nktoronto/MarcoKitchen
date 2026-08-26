@@ -1,6 +1,7 @@
 import { pool } from "./db";
 import { locations, isWithinHours } from "./locations";
 import { sendLargePartyAlert } from "./alerts";
+import { sendGuestConfirmedEmail, sendGuestPendingEmail } from "./guestEmails";
 import { CONFIRMED_THRESHOLD } from "./constants";
 
 export type ReservationInput = {
@@ -159,11 +160,11 @@ export async function createReservation(
       status = "confirmed";
     }
 
-    const insertResult = await client.query<{ id: number }>(
+    const insertResult = await client.query<{ id: number; cancel_token: string }>(
       `INSERT INTO reservations
          (location, name, email, phone, party_size, reservation_date, reservation_time, notes, status)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-       RETURNING id`,
+       RETURNING id, cancel_token`,
       [
         location.id,
         input.name.trim(),
@@ -180,10 +181,32 @@ export async function createReservation(
     await client.query("COMMIT");
 
     const newId = insertResult.rows[0].id;
+    const cancelToken = insertResult.rows[0].cancel_token;
+    const guestEmailPayload = {
+      name: input.name.trim(),
+      email: input.email.trim(),
+      party_size: partySize,
+      reservation_date: input.date,
+      reservation_time: input.time,
+      location: location.id,
+      cancel_token: cancelToken,
+    };
+
+    // Best-effort for all of the below: none of these failing should ever
+    // surface as a booking failure to the guest. Awaited (not
+    // fire-and-forget) so they actually complete before this serverless
+    // invocation ends.
+    try {
+      if (status === "confirmed") {
+        await sendGuestConfirmedEmail(guestEmailPayload);
+      } else {
+        await sendGuestPendingEmail(guestEmailPayload);
+      }
+    } catch (err) {
+      console.error("Failed to send guest submission email:", err);
+    }
+
     if (status === "pending") {
-      // Best-effort: an alert failure must never surface as a booking
-      // failure to the guest. Awaited (not fire-and-forget) so it
-      // actually completes before this serverless invocation ends.
       try {
         await sendLargePartyAlert(newId);
       } catch (err) {
