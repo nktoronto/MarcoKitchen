@@ -1,0 +1,95 @@
+:root {
+  --bg-deep: #08210f;
+  --bg-panel: #0e3220;
+  --gold-pale: #efdba1;
+  --gold-rich: #c9a227;
+  --cream: #f8f3e6;
+  --ink: #17241a;
+  --ink-soft: #55654d;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-body), system-ui, -apple-system, sans-serif;
+  background: var(--bg-deep);
+  color: var(--cream);
+}
+
+h1,
+h2,
+h3,
+.display {
+  font-family: var(--font-display), Georgia, serif;
+  font-weight: 400;
+  margin: 0;
+  letter-spacing: 0.01em;
+}
+
+button,
+input,
+textarea {
+  font-family: var(--font-body), system-ui, sans-serif;
+  font-size: 16px;
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--gold-rich);
+  color: #201705;
+  font-weight: 700;
+  font-size: 17px;
+  padding: 16px 28px;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  min-height: 52px;
+  box-shadow: 0 8px 24px rgba(201, 162, 39, 0.25);
+}
+
+.btn-primary:hover {
+  background: var(--gold-pale);
+}
+
+.field-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 6px;
+  display: block;
+}
+
+.field-input {
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1.5px solid #dcd3bc;
+  background: #ffffff;
+  color: var(--ink);
+  font-size: 16px;
+}
+
+.field-input:focus {
+  outline: none;
+  border-color: var(--gold-rich);
+}
+
+textarea.field-input {
+  resize: vertical;
+  min-height: 88px;
+}
