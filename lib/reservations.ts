@@ -3,6 +3,7 @@ import { locations, isWithinHours } from "./locations";
 import { sendLargePartyAlert } from "./alerts";
 import { sendGuestConfirmedEmail, sendGuestPendingEmail } from "./guestEmails";
 import { CONFIRMED_THRESHOLD } from "./constants";
+import { isPastEastern } from "./dates";
 
 export type ReservationInput = {
   locationId: string;
@@ -92,9 +93,9 @@ export async function createReservation(
 
   // Built from validated numeric parts rather than parsed from a
   // concatenated string, so there's no dependence on Date's string-parsing
-  // behavior. Restaurant's own local wall-clock time — spec.md deliberately
-  // keeps timezone handling out of scope (single fixed timezone, no
-  // per-guest conversion), so this compares directly against server time.
+  // behavior. Used only for calendar-validity (does Feb 30 roll over?) and
+  // day-of-week — both self-consistent regardless of the server's own
+  // timezone, since the same components go in as come out.
   const requestedDateTime = new Date(year, month - 1, day, hh, mm);
   const isRealCalendarDate =
     requestedDateTime.getFullYear() === year &&
@@ -112,7 +113,10 @@ export async function createReservation(
     };
   }
 
-  if (requestedDateTime.getTime() < Date.now()) {
+  // The restaurant's own local wall-clock time is always Eastern — compared
+  // as Eastern here too (not the server's own timezone, which on Vercel is
+  // UTC), the same Eastern-aware check the digest cron already uses.
+  if (isPastEastern(input.date, input.time)) {
     return {
       ok: false,
       error: "That date/time has already passed — please choose a future time.",
