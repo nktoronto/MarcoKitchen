@@ -32,6 +32,7 @@ export default async function ReviewPage({
         <p>
           {reservation.name} — party of {reservation.party_size} — {locationName}, {when}
         </p>
+        <p>Reservation #{reservation.id}</p>
         <p>
           Current status: <strong>{reservation.status}</strong>
         </p>
