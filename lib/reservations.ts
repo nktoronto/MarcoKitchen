@@ -183,6 +183,7 @@ export async function createReservation(
     const newId = insertResult.rows[0].id;
     const cancelToken = insertResult.rows[0].cancel_token;
     const guestEmailPayload = {
+      id: newId,
       name: input.name.trim(),
       email: input.email.trim(),
       party_size: partySize,

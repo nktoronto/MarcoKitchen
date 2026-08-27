@@ -57,7 +57,8 @@ export async function cancelByToken(token: string): Promise<DecisionResult> {
     await sendEmail({
       to: process.env.STAFF_EMAIL ?? "",
       subject: `Cancelled by guest — ${location?.name ?? row.location}`,
-      html: `<p>${row.name}, party of ${row.party_size}, ${formatDateLabel(row.reservation_date)} at ${formatTimeLabel(row.reservation_time)} at ${location?.name ?? row.location} — cancelled by guest.</p>`,
+      html: `<p>${row.name}, party of ${row.party_size}, ${formatDateLabel(row.reservation_date)} at ${formatTimeLabel(row.reservation_time)} at ${location?.name ?? row.location} — cancelled by guest.</p>
+             <p>Reservation #${row.id}</p>`,
     });
   } catch (err) {
     console.error("Failed to send cancellation notice to Marco:", err);

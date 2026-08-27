@@ -11,6 +11,7 @@ function locationName(locationId: string): string {
 }
 
 type ReservationForGuestEmail = {
+  id: number;
   name: string;
   email: string;
   party_size: number;
@@ -28,6 +29,7 @@ export async function sendGuestConfirmedEmail(r: ReservationForGuestEmail): Prom
     subject: `You're confirmed — ${locationName(r.location)}, ${formatDateLabel(r.reservation_date)}`,
     html: `<h2>You're confirmed!</h2>
       <p>Table for ${r.party_size} at ${locationName(r.location)}, ${when}.</p>
+      <p>Reservation #${r.id}</p>
       <p>We look forward to seeing you!</p>
       <p><a href="${cancelUrl}">Cancel this reservation</a></p>`,
   });
@@ -41,11 +43,13 @@ export async function sendGuestPendingEmail(r: ReservationForGuestEmail): Promis
     subject: `Request received — ${locationName(r.location)}, ${formatDateLabel(r.reservation_date)}`,
     html: `<h2>Thanks — your request is in</h2>
       <p>Table for ${r.party_size} at ${locationName(r.location)}, ${when}, is pending review. We'll confirm shortly.</p>
+      <p>Reservation #${r.id}</p>
       <p><a href="${cancelUrl}">Cancel this request</a></p>`,
   });
 }
 
 type ReservationForOutcomeEmail = {
+  id: number;
   name: string;
   email: string;
   party_size: number;
@@ -64,6 +68,7 @@ export async function sendGuestDeclinedEmail(
     subject: `About your reservation request — ${locationName(r.location)}`,
     html: `<h2>We're unable to accommodate this request</h2>
       <p>Your request for ${r.party_size} at ${locationName(r.location)}, ${when}, couldn't be confirmed.</p>
+      <p>Reservation #${r.id}</p>
       <p>${reason ? reason : "Please feel free to reach out or try another time."}</p>`,
   });
 }
@@ -75,6 +80,7 @@ export async function sendGuestLapsedEmail(r: ReservationForOutcomeEmail): Promi
     subject: `Your request wasn't confirmed in time — ${locationName(r.location)}`,
     html: `<h2>Your request has lapsed</h2>
       <p>Your request for ${r.party_size} at ${locationName(r.location)}, ${when}, wasn't confirmed in time.</p>
+      <p>Reservation #${r.id}</p>
       <p>Please feel free to submit a new request or contact us directly.</p>`,
   });
 }
