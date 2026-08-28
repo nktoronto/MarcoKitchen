@@ -2,6 +2,7 @@ import { pool } from "@/lib/db";
 import { sendEmail } from "@/lib/email";
 import { sendGuestLapsedEmail } from "@/lib/guestEmails";
 import { isPastEastern } from "@/lib/dates";
+import { getUpcomingConfirmed } from "@/lib/decisions";
 
 export const dynamic = "force-dynamic";
 
@@ -55,21 +56,33 @@ export async function GET(request: Request) {
     }
   }
 
-  if (upcoming.length > 0) {
-    const secret = process.env.PENDING_LIST_SECRET ?? "";
-    const siteUrl = process.env.SITE_URL ?? "https://marcoskitchen.vercel.app";
-    const pendingUrl = `${siteUrl}/pending/${secret}`;
-    try {
-      await sendEmail({
-        to: process.env.STAFF_EMAIL ?? "",
-        subject: `${upcoming.length} pending request${upcoming.length === 1 ? "" : "s"} awaiting review`,
-        html: `<p>You have ${upcoming.length} pending request${upcoming.length === 1 ? "" : "s"} awaiting review.</p>
-               <p><a href="${pendingUrl}">Review pending requests</a></p>`,
-      });
-    } catch (err) {
-      console.error("Failed to send Marco's pending digest email:", err);
-    }
+  // Sent every day regardless of whether anything is pending, so Marco
+  // always has a fresh link to the current-bookings page in his inbox --
+  // not just on days there's something to review.
+  const confirmedCount = (await getUpcomingConfirmed()).length;
+  const secret = process.env.PENDING_LIST_SECRET ?? "";
+  const siteUrl = process.env.SITE_URL ?? "https://marcoskitchen.vercel.app";
+  const pendingUrl = `${siteUrl}/pending/${secret}`;
+  const pendingLine =
+    upcoming.length > 0
+      ? `${upcoming.length} pending request${upcoming.length === 1 ? "" : "s"} awaiting review.`
+      : "No pending requests right now.";
+  const confirmedLine = `${confirmedCount} confirmed booking${confirmedCount === 1 ? "" : "s"} upcoming.`;
+
+  try {
+    await sendEmail({
+      to: process.env.STAFF_EMAIL ?? "",
+      subject:
+        upcoming.length > 0
+          ? `${upcoming.length} pending request${upcoming.length === 1 ? "" : "s"} awaiting review`
+          : `Daily summary — ${confirmedCount} confirmed booking${confirmedCount === 1 ? "" : "s"} upcoming`,
+      html: `<p>${pendingLine}</p>
+             <p>${confirmedLine}</p>
+             <p><a href="${pendingUrl}">View current bookings</a></p>`,
+    });
+  } catch (err) {
+    console.error("Failed to send Marco's daily digest email:", err);
   }
 
-  return Response.json({ ok: true, lapsedCount, upcomingCount: upcoming.length });
+  return Response.json({ ok: true, lapsedCount, upcomingCount: upcoming.length, confirmedCount });
 }
