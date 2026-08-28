@@ -84,3 +84,19 @@ export async function sendGuestLapsedEmail(r: ReservationForOutcomeEmail): Promi
       <p>Please feel free to submit a new request or contact us directly.</p>`,
   });
 }
+
+// TODO: replace with the real Google Business review link (or set
+// GOOGLE_REVIEW_URL in the environment) before this goes out to real guests.
+const PLACEHOLDER_REVIEW_URL = "https://g.page/r/REPLACE_WITH_REAL_GOOGLE_REVIEW_LINK/review";
+
+export async function sendGuestReviewRequestEmail(r: ReservationForOutcomeEmail): Promise<void> {
+  const reviewUrl = process.env.GOOGLE_REVIEW_URL ?? PLACEHOLDER_REVIEW_URL;
+  await sendEmail({
+    to: r.email,
+    subject: `How was your visit to ${locationName(r.location)}?`,
+    html: `<h2>Thanks for dining with us, ${r.name}!</h2>
+      <p>We hope you enjoyed your table for ${r.party_size} at ${locationName(r.location)}. If you have a minute, a Google review helps a lot — it's the biggest thing that helps other diners find us.</p>
+      <p><a href="${reviewUrl}">Leave us a review</a></p>
+      <p>Reservation #${r.id}</p>`,
+  });
+}

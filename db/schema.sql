@@ -18,6 +18,9 @@ CREATE TABLE IF NOT EXISTS reservations (
   -- now so the table doesn't need reworking when those chunks arrive.
   cancel_token UUID NOT NULL DEFAULT gen_random_uuid(),
   decision_token UUID NOT NULL DEFAULT gen_random_uuid(),
+  -- Set once the post-visit "leave us a review" email has gone out, so the
+  -- daily job never sends it twice for the same booking.
+  review_requested_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );

@@ -164,6 +164,31 @@ export async function getUpcomingConfirmed(): Promise<ConfirmedRow[]> {
   return result.rows;
 }
 
+export type ReviewRequestRow = {
+  id: number;
+  name: string;
+  email: string;
+  party_size: number;
+  reservation_date: string;
+  reservation_time: string;
+  location: string;
+};
+
+// Confirmed bookings whose date has fully passed (strictly before today,
+// not just past their time-of-day) and that haven't had a review request
+// sent yet. A guest whose booking was later cancelled no longer has
+// status = 'confirmed', so they're naturally excluded here.
+export async function getReservationsForReviewRequest(): Promise<ReviewRequestRow[]> {
+  const { date: today } = currentEasternDateTimeParts();
+  const result = await pool.query<ReviewRequestRow>(
+    `SELECT id, name, email, party_size, reservation_date::text, reservation_time, location
+     FROM reservations
+     WHERE status = 'confirmed' AND reservation_date < $1 AND review_requested_at IS NULL`,
+    [today]
+  );
+  return result.rows;
+}
+
 export type DecisionResult = { ok: true; reservation: ReservationDetail } | { ok: false };
 
 // The "WHERE ... AND status = 'pending'" guard on both mutations below is

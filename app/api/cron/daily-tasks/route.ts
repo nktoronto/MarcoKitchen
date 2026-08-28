@@ -1,8 +1,8 @@
 import { pool } from "@/lib/db";
 import { sendEmail } from "@/lib/email";
-import { sendGuestLapsedEmail } from "@/lib/guestEmails";
+import { sendGuestLapsedEmail, sendGuestReviewRequestEmail } from "@/lib/guestEmails";
 import { isPastEastern } from "@/lib/dates";
-import { getUpcomingConfirmed } from "@/lib/decisions";
+import { getUpcomingConfirmed, getReservationsForReviewRequest } from "@/lib/decisions";
 
 export const dynamic = "force-dynamic";
 
@@ -56,6 +56,26 @@ export async function GET(request: Request) {
     }
   }
 
+  // Post-visit review requests -- every confirmed booking from a day that's
+  // fully passed, one email each, ever. The "review_requested_at IS NULL"
+  // guard (checked again in the UPDATE below) is what makes this safe to
+  // run daily without re-emailing the same guest.
+  const reviewCandidates = await getReservationsForReviewRequest();
+  let reviewRequestedCount = 0;
+  for (const row of reviewCandidates) {
+    const updateResult = await pool.query(
+      `UPDATE reservations SET review_requested_at = now() WHERE id = $1 AND review_requested_at IS NULL`,
+      [row.id]
+    );
+    if (updateResult.rowCount === 0) continue;
+    reviewRequestedCount++;
+    try {
+      await sendGuestReviewRequestEmail(row);
+    } catch (err) {
+      console.error("Failed to send guest review-request email:", err);
+    }
+  }
+
   // Sent every day regardless of whether anything is pending, so Marco
   // always has a fresh link to the current-bookings page in his inbox --
   // not just on days there's something to review.
@@ -84,5 +104,11 @@ export async function GET(request: Request) {
     console.error("Failed to send Marco's daily digest email:", err);
   }
 
-  return Response.json({ ok: true, lapsedCount, upcomingCount: upcoming.length, confirmedCount });
+  return Response.json({
+    ok: true,
+    lapsedCount,
+    upcomingCount: upcoming.length,
+    confirmedCount,
+    reviewRequestedCount,
+  });
 }

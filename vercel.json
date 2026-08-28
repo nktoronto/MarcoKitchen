@@ -5,7 +5,7 @@
       "schedule": "0 0 * * *"
     },
     {
-      "path": "/api/cron/pending-review-digest",
+      "path": "/api/cron/daily-tasks",
       "schedule": "0 13 * * *"
     }
   ]
