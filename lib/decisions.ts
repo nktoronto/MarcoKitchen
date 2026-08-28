@@ -3,6 +3,7 @@ import { locations } from "./locations";
 import { sendGuestConfirmedEmail, sendGuestDeclinedEmail } from "./guestEmails";
 import { sendEmail } from "./email";
 import { formatDateLabel, formatTimeLabel } from "./formatting";
+import { currentEasternDateTimeParts } from "./dates";
 
 export type ReservationDetail = {
   id: number;
@@ -134,6 +135,31 @@ export async function getAllPending(): Promise<PendingRow[]> {
      FROM reservations
      WHERE status = 'pending'
      ORDER BY reservation_date, reservation_time`
+  );
+  return result.rows;
+}
+
+export type ConfirmedRow = {
+  id: number;
+  location: string;
+  name: string;
+  party_size: number;
+  reservation_date: string;
+  reservation_time: string;
+  notes: string | null;
+};
+
+// Today onward only -- confirmed bookings that already happened aren't
+// "current" from Marco's point of view, and this list would otherwise grow
+// without bound.
+export async function getUpcomingConfirmed(): Promise<ConfirmedRow[]> {
+  const { date: today } = currentEasternDateTimeParts();
+  const result = await pool.query<ConfirmedRow>(
+    `SELECT id, location, name, party_size, reservation_date::text, reservation_time, notes
+     FROM reservations
+     WHERE status = 'confirmed' AND reservation_date >= $1
+     ORDER BY reservation_date, reservation_time`,
+    [today]
   );
   return result.rows;
 }
