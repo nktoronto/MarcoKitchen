@@ -82,14 +82,42 @@ textarea {
   background: #ffffff;
   color: var(--ink);
   font-size: 16px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .field-input:focus {
   outline: none;
   border-color: var(--gold-rich);
+  box-shadow: 0 0 0 3px rgba(201, 162, 39, 0.15);
 }
 
 textarea.field-input {
   resize: vertical;
   min-height: 88px;
+}
+
+.stepper-btn {
+  width: 44px;
+  height: 44px;
+  flex: none;
+  border-radius: 50%;
+  border: 1.5px solid var(--gold-rich);
+  background: #ffffff;
+  color: var(--ink);
+  font-size: 20px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.stepper-btn:hover {
+  background: var(--gold-pale);
+}
+
+.stepper-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }

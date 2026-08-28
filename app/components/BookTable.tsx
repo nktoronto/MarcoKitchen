@@ -40,6 +40,14 @@ export default function BookTable() {
     }
   }, [state]);
 
+  function decrementParty() {
+    setPartySize((prev) => String(Math.max(1, (Number(prev) || 1) - 1)));
+  }
+
+  function incrementParty() {
+    setPartySize((prev) => String((Number(prev) || 0) + 1));
+  }
+
   function handleReserveAnother(e: React.MouseEvent<HTMLButtonElement>) {
     // Defensive: this button swaps places with the type="submit" button at
     // the same position in the tree, so without a distinct `key` (added
@@ -63,19 +71,30 @@ export default function BookTable() {
   return (
     <section
       id="reserve"
-      style={{ background: "var(--cream)", color: "var(--ink)", padding: "56px 20px 64px" }}
+      style={{ background: "var(--bg-panel)", color: "var(--cream)", padding: "56px 20px 64px" }}
     >
       <div style={{ maxWidth: "480px", margin: "0 auto" }}>
         <div style={{ textAlign: "center", marginBottom: "6px" }}>
-          <h2 className="display" style={{ fontSize: "28px", color: "var(--ink)" }}>
+          <h2 className="display" style={{ fontSize: "28px", color: "var(--gold-pale)" }}>
             Reserve a Table
           </h2>
+          <div
+            aria-hidden="true"
+            style={{
+              width: "48px",
+              height: "3px",
+              background: "var(--gold-rich)",
+              borderRadius: "2px",
+              margin: "14px auto 0",
+            }}
+          />
           <p
             style={{
               fontSize: "14.5px",
               lineHeight: 1.5,
-              color: "var(--ink-soft)",
-              margin: "10px auto 0",
+              color: "var(--cream)",
+              opacity: 0.8,
+              margin: "14px auto 0",
               maxWidth: "360px",
             }}
           >
@@ -88,7 +107,17 @@ export default function BookTable() {
           action={formAction}
           onChange={() => setResultStale(true)}
           onSubmit={() => setResultStale(false)}
-          style={{ display: "flex", flexDirection: "column", gap: "16px", marginTop: "28px" }}
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "16px",
+            marginTop: "28px",
+            background: "#ffffff",
+            borderRadius: "20px",
+            padding: "28px 22px 30px",
+            boxShadow: "0 28px 56px -20px rgba(0,0,0,0.45), 0 2px 8px rgba(0,0,0,0.15)",
+            border: "1px solid rgba(239,219,161,0.16)",
+          }}
         >
           {/* Honeypot — hidden from real visitors, most simple bots fill it in.
               Name is deliberately non-semantic so browser/password-manager
@@ -104,22 +133,7 @@ export default function BookTable() {
             style={{ position: "absolute", left: "-9999px", width: "1px", height: "1px", opacity: 0 }}
           />
 
-          <div>
-            <span className="field-label">Location</span>
-            <select
-              ref={locationRef}
-              className="field-input"
-              name="locationId"
-              value={locationId}
-              onChange={(e) => setLocationId(e.target.value)}
-            >
-              {locations.map((location) => (
-                <option key={location.id} value={location.id}>
-                  {location.name}
-                </option>
-              ))}
-            </select>
-          </div>
+          <SectionLabel first>Your Details</SectionLabel>
 
           <div>
             <span className="field-label">Name</span>
@@ -162,6 +176,25 @@ export default function BookTable() {
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
             />
+          </div>
+
+          <SectionLabel>Table Details</SectionLabel>
+
+          <div>
+            <span className="field-label">Location</span>
+            <select
+              ref={locationRef}
+              className="field-input"
+              name="locationId"
+              value={locationId}
+              onChange={(e) => setLocationId(e.target.value)}
+            >
+              {locations.map((location) => (
+                <option key={location.id} value={location.id}>
+                  {location.name}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div style={{ display: "flex", gap: "12px" }}>
@@ -208,16 +241,40 @@ export default function BookTable() {
           </div>
 
           <div>
-            <span className="field-label">Party size</span>
-            <input
-              className="field-input"
-              type="number"
-              name="partySize"
-              min={1}
-              value={partySize}
-              onChange={(e) => setPartySize(e.target.value)}
-            />
-            {fieldErrors.partySize && <FieldError message={fieldErrors.partySize} />}
+            <span className="field-label" style={{ textAlign: "center" }}>Party size</span>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "16px" }}>
+              <button
+                type="button"
+                className="stepper-btn"
+                onClick={decrementParty}
+                disabled={Number(partySize) <= 1}
+                aria-label="Decrease party size"
+              >
+                &minus;
+              </button>
+              <input
+                className="field-input"
+                type="number"
+                name="partySize"
+                min={1}
+                value={partySize}
+                onChange={(e) => setPartySize(e.target.value)}
+                style={{ width: "72px", flex: "none", textAlign: "center", fontWeight: 700 }}
+              />
+              <button
+                type="button"
+                className="stepper-btn"
+                onClick={incrementParty}
+                aria-label="Increase party size"
+              >
+                +
+              </button>
+            </div>
+            {fieldErrors.partySize && (
+              <div style={{ textAlign: "center", marginTop: "5px" }}>
+                <FieldError message={fieldErrors.partySize} />
+              </div>
+            )}
           </div>
 
           <div>
@@ -262,6 +319,10 @@ export default function BookTable() {
               ref={statusRef}
               role="status"
               style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "10px",
                 padding: "14px 16px",
                 borderRadius: "10px",
                 fontSize: "14px",
@@ -272,15 +333,16 @@ export default function BookTable() {
                     ? "rgba(56,142,60,0.12)"
                     : state.status === "pending"
                       ? "rgba(201,162,39,0.15)"
-                      : "rgba(211,47,47,0.1)",
-                color: state.status === "error" ? "#8a1f1f" : "var(--ink)",
+                      : "rgba(119,10,10,0.1)",
+                color: state.status === "error" ? "#770A0A" : "var(--ink)",
                 border:
                   state.status === "error"
-                    ? "1px solid rgba(211,47,47,0.3)"
+                    ? "1px solid rgba(119,10,10,0.3)"
                     : "1px solid rgba(23,36,26,0.12)",
               }}
             >
-              {state.message}
+              <StatusIcon status={state.status} />
+              <span>{state.message}</span>
             </div>
           )}
         </form>
@@ -289,10 +351,58 @@ export default function BookTable() {
   );
 }
 
+function SectionLabel({ children, first }: { children: React.ReactNode; first?: boolean }) {
+  return (
+    <div
+      style={{
+        fontSize: "12px",
+        fontWeight: 700,
+        textTransform: "uppercase",
+        letterSpacing: "0.08em",
+        color: "var(--gold-rich)",
+        paddingTop: first ? 0 : "16px",
+        marginTop: first ? 0 : "2px",
+        borderTop: first ? "none" : "1px solid rgba(23,36,26,0.08)",
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
 function FieldError({ message }: { message: string }) {
   return (
-    <span style={{ fontSize: "12.5px", color: "#b3261e", display: "block", marginTop: "5px" }}>
+    <span style={{ fontSize: "12.5px", color: "#770A0A", display: "block", marginTop: "5px" }}>
       {message}
     </span>
   );
+}
+
+function StatusIcon({ status }: { status: BookingFormState["status"] }) {
+  if (status === "confirmed") {
+    return (
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true" style={{ flex: "none" }}>
+        <circle cx="10" cy="10" r="9" stroke="currentColor" strokeWidth="1.6" />
+        <path d="M6 10.3l2.4 2.4L14 7.3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    );
+  }
+  if (status === "pending") {
+    return (
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true" style={{ flex: "none" }}>
+        <circle cx="10" cy="10" r="9" stroke="currentColor" strokeWidth="1.6" />
+        <path d="M10 5.5v5l3.2 1.9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    );
+  }
+  if (status === "error") {
+    return (
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true" style={{ flex: "none" }}>
+        <circle cx="10" cy="10" r="9" stroke="currentColor" strokeWidth="1.6" />
+        <path d="M10 6v5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+        <circle cx="10" cy="13.6" r="1" fill="currentColor" />
+      </svg>
+    );
+  }
+  return null;
 }
